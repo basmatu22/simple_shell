@@ -1,31 +1,24 @@
-# Compiler and flags
 CC = gcc
 CFLAGS = -Wall -Werror -Wextra -pedantic
-
-# Executable name
+OBJ = shell.o getline.o env_builtin.o
 TARGET = shell
 
-# Source files
-SRCS = shell.c getline.c
-
-# Object files
-OBJS = $(SRCS:.c=.o)
-
-# Default target
 all: $(TARGET)
 
-# Link the executable
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
 
-# Compile source files into object files
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+shell.o: shell.c shell.h
+	$(CC) $(CFLAGS) -c shell.c
 
-# Clean up build files
+getline.o: getline.c getline.h
+	$(CC) $(CFLAGS) -c getline.c
+
+env_builtin.o: env_builtin.c shell.h
+	$(CC) $(CFLAGS) -c env_builtin.c
+
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET) $(OBJ)
 
-# Phony targets
 .PHONY: all clean
 
