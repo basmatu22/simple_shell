@@ -1,63 +1,65 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "shell.h"
 
-#define BUFFER_SIZE 1024
+/**
+* _getline - Read The Input By User From Stdin
+* Return: Input
+*/
+char *_getline()
+{
+int i, buffsize = BUFSIZE, rd;
+char c = 0;
+char *buff = malloc(buffsize);
 
-ssize_t custom_getline(char **lineptr, size_t *n, int fd) {
-    static char buffer[BUFFER_SIZE];
-    static size_t buffer_pos;
-    static size_t buffer_end;
+	if (buff == NULL)
+	{
+		free(buff);
+		return (NULL);
+	}
 
-    ssize_t total_read = 0;
-    size_t line_len = 0;
-
-    if (*lineptr == NULL || *n == 0) {
-        *n = BUFFER_SIZE;
-        *lineptr = malloc(*n);
-        if (*lineptr == NULL) {
-            return -1;
-        }
-    }
-
-    while (1) {
-        if (buffer_pos >= buffer_end) {
-            ssize_t bytes_read = read(fd, buffer, BUFFER_SIZE);
-            if (bytes_read == 0) { /* EOF */
-                if (total_read == 0) {
-                    return -1;
-                }
-                break;
-            } else if (bytes_read < 0) { /* Error */
-                return -1;
-            }
-            buffer_pos = 0;
-            buffer_end = bytes_read;
-        }
-
-        while (buffer_pos < buffer_end) {
-            (*lineptr)[line_len++] = buffer[buffer_pos++];
-            total_read++;
-
-            if ((*lineptr)[line_len - 1] == '\n') {
-                (*lineptr)[line_len] = '\0';
-                return total_read;
-            }
-
-            if (line_len >= *n - 1) {
-                char *new_lineptr;
-
-                *n *= 2;
-                new_lineptr = realloc(*lineptr, *n);
-                if (new_lineptr == NULL) {
-                    return -1;
-                }
-                *lineptr = new_lineptr;
-            }
-        }
-    }
-
-    (*lineptr)[line_len] = '\0';
-    return total_read;
+	for (i = 0; c != EOF && c != '\n'; i++)
+	{
+		fflush(stdin);
+		rd = read(STDIN_FILENO, &c, 1);
+		if (rd == 0)
+		{
+			free(buff);
+			exit(EXIT_SUCCESS);
+		}
+		buff[i] = c;
+		if (buff[0] == '\n')
+		{
+			free(buff);
+			return ("\0");
+		}
+		if (i >= buffsize)
+		{
+			buff = _realloc(buff, buffsize, buffsize + 1);
+			if (buff == NULL)
+			{
+				return (NULL);
+			}
+		}
+	}
+	buff[i] = '\0';
+	hashtag_handle(buff);
+	return (buff);
 }
 
+/**
+ * hashtag_handle - remove everything after #
+ * @buff: input;
+ * Return:void
+ */
+void hashtag_handle(char *buff)
+{
+	int i;
+
+		for (i = 0; buff[i] != '\0'; i++)
+		{
+			if (buff[i] == '#')
+			{
+			buff[i] = '\0';
+			break;
+			}
+	}
+}
