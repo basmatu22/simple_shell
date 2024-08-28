@@ -23,12 +23,12 @@ ssize_t custom_getline(char **lineptr, size_t *n, int fd) {
     while (1) {
         if (buffer_pos >= buffer_end) {
             ssize_t bytes_read = read(fd, buffer, BUFFER_SIZE);
-            if (bytes_read == 0) { // EOF
+            if (bytes_read == 0) { /* EOF */
                 if (total_read == 0) {
                     return -1;
                 }
                 break;
-            } else if (bytes_read < 0) { // Error
+            } else if (bytes_read < 0) { /* Error */
                 return -1;
             }
             buffer_pos = 0;
@@ -45,8 +45,10 @@ ssize_t custom_getline(char **lineptr, size_t *n, int fd) {
             }
 
             if (line_len >= *n - 1) {
+                char *new_lineptr;
+
                 *n *= 2;
-                char *new_lineptr = realloc(*lineptr, *n);
+                new_lineptr = realloc(*lineptr, *n);
                 if (new_lineptr == NULL) {
                     return -1;
                 }

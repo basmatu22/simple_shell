@@ -1,12 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Werror -Wextra -pedantic
+CFLAGS = -Wall -Werror -Wextra -pedantic -std=gnu89
 OBJ = shell.o getline.o env_builtin.o
-TARGET = shell
 
-all: $(TARGET)
-
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
+shell: $(OBJ)
+	$(CC) $(CFLAGS) -o shell $(OBJ)
 
 shell.o: shell.c shell.h
 	$(CC) $(CFLAGS) -c shell.c
@@ -18,7 +15,5 @@ env_builtin.o: env_builtin.c shell.h
 	$(CC) $(CFLAGS) -c env_builtin.c
 
 clean:
-	rm -f $(TARGET) $(OBJ)
-
-.PHONY: all clean
+	rm -f $(OBJ) shell
 
