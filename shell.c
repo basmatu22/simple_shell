@@ -4,98 +4,116 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include "getline.h"
 
 #define BUFFER_SIZE 1024
 #define PROMPT "#cisfun$ "
 
-/**
- * execute_command - Executes a command using execve
- * @command: The command to execute
- */
+extern char **environ;
+
 void execute_command(char *command)
 {
-char *argv[] = {command, NULL};
-if (execve(command, argv, NULL) == -1)
-{
-perror("./shell");
-}
-}
-/**
- * read_input - Reads a line of input from the user
- * @line: Pointer to the buffer where the line will be stored
- * @len: Pointer to the size of the buffer
- *
- * Return: The number of characters read, or -1 on error
- */
-ssize_t read_input(char **line, size_t *len)
-{
-ssize_t nread;
-
-printf(PROMPT);
-nread = getline(line, len, stdin);
-if (nread == -1)
-{
-if (feof(stdin))
-{
-printf("\n");
-return (-1);
-}
-else
-{
-perror("getline");
-}
+    char *argv[] = {command, NULL};
+    if (execve(command, argv, NULL) == -1)
+    {
+        perror("./shell");
+    }
 }
 
-return (nread);
-}
-/**
- * fork_and_execute - Forks a process and executes the command
- * @line: The command to execute
- */
-void fork_and_execute(char *line)
+void print_env(void)
 {
-pid_t pid = fork();
-if (pid == -1)
-{
-perror("fork");
-return;
+    char **env = environ;
+    while (*env)
+    {
+        printf("%s\n", *env);
+        env++;
+    }
 }
-if (pid == 0)
-{
-execute_command(line);
-exit(EXIT_FAILURE);
-}
-else
-{
-int status;
-waitpid(pid, &status, 0);
-}
-}
-/**
- * main - The entry point for the shell program
- *
- * Return: 0 on success, or another value on error
- */
+
 int main(void)
 {
-char *line = NULL;
-size_t len = 0;
-ssize_t nread;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
 
-while (1)
-{
-nread = read_input(&line, &len);
-if (nread == -1)
-{
-break;
+    while (1)
+    {
+        printf(PROMPT);
+        nread = custom_getline(&line, &len, STDIN_FILENO);
+        if (nread == -1)
+        {
+            if (feof(stdin))
+            {
+                printf("\n");
+                break;
+            }
+            else
+            {
+                perror("getline");
+                continue;
+            }
+        }
+
+        // Remove the newline character from the input
+        line[strcspn(line, "\n")] = '\0';
+
+        // Check for empty command
+        if (line[0] == '\0')
+        {
+            continue;
+        }
+
+        // Handle the exit command with or without status argument
+        if (strncmp(line, "exit", 4) == 0)
+        {
+            char *status_str = line + 5; // Point to the argument after "exit "
+            int status = 0;
+
+            if (*status_str != '\0') // Check if there is an argument
+            {
+                // Convert the status argument to an integer
+                char *endptr;
+                status = strtol(status_str, &endptr, 10);
+
+                // Check for invalid integer input
+                if (*endptr != '\0') 
+                {
+                    fprintf(stderr, "exit: %s: numeric argument required\n", status_str);
+                    continue;
+                }
+            }
+
+            free(line);
+            exit(status);
+        }
+
+        // Handle the env command
+        if (strcmp(line, "env") == 0)
+        {
+            print_env();
+            continue; // Display environment and continue loop
+        }
+
+        pid_t pid = fork();
+        if (pid == -1)
+        {
+            perror("fork");
+            continue;
+        }
+
+        if (pid == 0)
+        {
+            execute_command(line);
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            int status;
+            waitpid(pid, &status, 0);
+        }
+    }
+
+    free(line);
+    return 0;
 }
-line[strcspn(line, "\n")] = '\0';
-if (line[0] == '\0')
-{
-continue;
-}
-fork_and_execute(line);
-}
-free(line);
-return (0);
-}
+
